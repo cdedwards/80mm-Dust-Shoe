@@ -1,0 +1,106 @@
+function UserMCodeModule.TC_PreOpenDustCover()
+	------------------ Add user code below this line ------------------
+local inst = mc.mcGetInstance()
+local DustBootX = 45.79
+local DustBootY = 36.4
+local DustBootZ = -4.443
+local DustBootRateY = 75
+local DustBootRateZ = 100
+local DustBootYSlide = 5	
+local DustBootSafeZ = -0.1
+
+
+local hreg = mc.mcRegGetHandle(inst,"iRegs0/DustBoot/ignoreDustBoot")
+local ignore = mc.mcRegGetValue(hreg)
+local hreg = mc.mcRegGetHandle(inst,"iRegs0/DustBoot/DustBootStatus")
+local val = mc.mcRegGetValue(hreg)
+
+	if (ignore == 1) then
+		mc.mcCntlSetLastError(inst, "Dust boot ignore")
+		do return nil, false, w.FunctionCompleted()end
+	end
+	
+	if (val == 0) then
+		mc.mcCntlSetLastError(inst, "Dust boot already dropped")
+		return nil, true, w.FunctionCompleted()
+	end
+-- =========================================================== drop dust boot =============================================================================
+
+	GCode = string.format("G00 G90 G53 Z%.4f\n", DustBootSafeZ) 																				------ Z Up	
+	mc.mcCntlGcodeExecuteWait(inst, GCode) 
+
+	GCode =  string.format("G00 G90 G53 X%.4f Y%.4f\n", DustBootX, DustBootY) 		------ TO DUSTSHOE ENTRY Y
+	mc.mcCntlGcodeExecuteWait(inst, GCode) 
+
+--	We need to make sure that we don't wipe out the dust boot dock when moving both x/y
+	GCode =  string.format("G00 G90 G53 Z%.4f\n", DustBootZ) 		------ TO DUSTSHOE ENTRY
+	mc.mcCntlGcodeExecuteWait(inst, GCode) 			
+
+	GCode = string.format("G0 G90 G53 Y%.4f F%.4f\n", DustBootY - DustBootYSlide,DustBootRateY)								------ MOVE Y INTO DUSTSHOE HOLDER
+	mc.mcCntlGcodeExecuteWait(inst, GCode) 
+				
+	GCode = string.format("G00 G90 G53 Z%.4f\n", DustBootSafeZ) 																				------ PICK UP Z --- DROP SHOE IN HOLDER -- 
+	mc.mcCntlGcodeExecuteWait(inst, GCode)
+	
+	GCode =  string.format("G00 G90 G53 Y%.4f \n", DustBootY) 							------ MOVE TO SAFE Y
+--	mc.mcCntlGcodeExecuteWait(inst, GCode)			
+	mc.mcRegSetValue(hreg, 0)
+	return nil, true, w.FunctionCompleted()
+
+end
+
+function UserMCodeModule.TC_PreCloseDustCover()
+	------------------ Add user code below this line ------------------
+
+local inst = mc.mcGetInstance()
+
+local DustBootX = 45.79
+local DustBootY = 36.4
+local DustBootZ = -4.3513
+local DustBootRateY = 100
+local DustBootRateZ = 50
+local DustBootYSlide = 5	
+local DustBootSafeZ = -0.1
+
+local hreg = mc.mcRegGetHandle(inst,"iRegs0/DustBoot/ignoreDustBoot")
+local ignore = mc.mcRegGetValue(hreg)
+local hreg = mc.mcRegGetHandle(inst,"iRegs0/DustBoot/DustBootStatus")
+local val = mc.mcRegGetValue(hreg)
+
+	if (ignore == 1) then
+		mc.mcCntlSetLastError(inst, "Dust boot ignore")
+		do return nil, false, w.FunctionCompleted()end
+	end
+	if (val == 1) then
+		mc.mcCntlSetLastError(inst, "Dust boot already picked up")
+		do return nil, false, w.FunctionCompleted()end
+	end
+--  ============================================================ PICKUP DUST SHOE ==========================================================================	
+	local toolnum, rc = mc.mcToolGetCurrent(inst)
+    if (toolnum == 0 or rc ~= 0) then
+		do return nil, false, w.FunctionCompleted()end
+	end
+
+	GCode = string.format("G00 G90 G53 Z%.4f\n", DustBootSafeZ)													------ Z UP
+	mc.mcCntlGcodeExecuteWait(inst, GCode)													------ Z UP
+	 
+	GCode =  string.format("G00 G90 G53 X%.4f Y%.4f\n", DustBootX, DustBootY-DustBootYSlide) 											------ To DustShoe Entry X 
+	mc.mcCntlGcodeExecuteWait(inst, GCode) 
+	
+	GCode = string.format("G00 G90 G53 Z%.4f\n", DustBootZ+0.75)											------ G00 Quick down to 20mm above DustShoe Pick Up 
+	mc.mcCntlGcodeExecuteWait(inst, GCode) 
+	
+	GCode = string.format("G00 G90 G53 Z%.4f F%.4f\n", DustBootZ,DustBootRateZ/2)							------ DustShoe Pick Up 
+	mc.mcCntlGcodeExecuteWait(inst, GCode) 
+				
+	GCode = string.format("G00 G90 G53 Y%.4f F%.4f\n", DustBootY,DustBootRateY)		------ DustShoe SlideOutY 
+	mc.mcCntlGcodeExecuteWait(inst, GCode)
+
+	GCode = string.format("G00 G90 G53 Z%.4f\n", DustBootSafeZ) 																				------ PICK UP Z --- DROP SHOE IN HOLDER -- 
+	mc.mcCntlGcodeExecuteWait(inst, GCode) 
+	mc.mcRegSetValue(hreg, 1)
+	
+	------------------ Don't Edit below this line -----------------------
+
+	return nil, true, w.FunctionCompleted()
+end
