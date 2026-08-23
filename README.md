@@ -1,4 +1,4 @@
-# 80mm-DustS-Shoe
+# 80mm-Dust-Shoe
 Dust shoe for a 80mm spindle which is dockable
 
 double stacked N52 6x3mm magnet's are used to attract the dockable ring to the dust boot dock and keep it in place a single 6x6 would work as well. Make sure of the direction on the two parts, upper and ring or you'll be reprinting it. Also used to attach the ring to the shoe.
